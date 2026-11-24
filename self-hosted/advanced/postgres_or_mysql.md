@@ -4,10 +4,11 @@ The Convex backend is designed to work well with SQLite, Postgres, or MySQL. By
 default, the docker image uses SQLite. If you're running a production workload
 that requires guaranteed uptime it's likely you want to use a managed Postgres
 or MySQL service. We've included instructions below for connecting to a Postgres
-database hosted on [Neon](https://neon.tech) or a MySQL (Vitess) database hosted
-on [PlanetScale](https://planetscale.com). We've tested that the Convex backend
-works with Postgres v17 and MySQL v8, but it's possible it works with other
-versions.
+database hosted on [Neon](https://neon.tech) or
+[Prisma Postgres](https://www.prisma.io/postgres), or a MySQL (Vitess) database
+hosted on [PlanetScale](https://planetscale.com). We've tested that the Convex
+backend works with Postgres v17 and MySQL v8, but it's possible it works with
+other versions.
 
 Use `npx convex export` to export your data before moving from one database
 provider to another.
@@ -47,6 +48,30 @@ Check that the database is connected to your self-hosted convex backend. There
 should be a line like `Connected to Postgres` in the logs. Note that you'll have
 to redeploy any existing Convex functions to the new database with
 `npx convex deploy`.
+
+### Connecting to Postgres on Prisma Postgres
+
+Copy the direct connection string for your database (the one with the host
+`db.prisma.io`) from the Prisma Console and create the database.
+
+```sh
+export DATABASE_CONNECTION='<connection string>'
+psql $DATABASE_CONNECTION -c "CREATE DATABASE convex_self_hosted"
+```
+
+Set `POSTGRES_URL` to the connection string without the db name and query
+params. For Prisma Postgres it should end in `db.prisma.io:5432`:
+
+```sh
+export POSTGRES_URL=$(echo $DATABASE_CONNECTION | sed -E 's/\/[^/]+(\?.*)?$//')
+```
+
+The backend keeps its own pool of connections, so use the direct host here
+rather than the pooled one (`pooled.db.prisma.io`).
+
+Register `POSTGRES_URL` in your hosting environment or restart your local
+backend as described in the Neon section above, then check the logs for a line
+like `Connected to Postgres`.
 
 ### Connecting to Postgres locally
 
